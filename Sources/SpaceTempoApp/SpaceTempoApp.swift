@@ -69,7 +69,9 @@ enum Tool {
 }
 
 @MainActor final class Model: ObservableObject {
-    @Published var duration = 0.5
+    @Published var duration = (UserDefaults.standard.object(forKey: "durationFactor") as? Double).flatMap { $0.isFinite && (0.25...1).contains($0) ? $0 : nil } ?? 0.5 {
+        didSet { UserDefaults.standard.set(duration, forKey: "durationFactor") }
+    }
     @Published var status: DockStatus?
     @Published var message = "Dock wird geprüft …"
     @Published var busy = false
@@ -99,7 +101,7 @@ enum Tool {
     }
 }
 
-struct ContentView: View {
+struct DurationView: View {
     @StateObject private var model = Model()
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
@@ -158,13 +160,5 @@ struct ContentView: View {
         .padding(28).frame(width: 560)
         .disabled(model.busy)
         .task { await model.refresh() }
-    }
-}
-
-@main struct SpaceTempoApp: App {
-    var body: some Scene {
-        WindowGroup { ContentView() }
-            .windowResizability(.contentSize)
-            .commands { CommandGroup(replacing: .newItem) {} }
     }
 }
